@@ -4,10 +4,10 @@
 register that arms two permission hooks by itself, and the incidents that bought each rule.
 
 I run four or five Claude Code sessions at the same time on one laptop against one folder. One
-working tree, one `.git`, one branch. Every guide says "use worktrees". I cannot. My folder is
-not a codebase, it is a private corpus with several confidentiality boundaries inside it, and a
+working tree, one `.git`, one branch. Every guide says "use worktrees". My folder is not a
+codebase, it is a private corpus with several confidentiality boundaries inside it, and a
 worktree puts a second complete copy of all of them on disk where my note app indexes it and
-git sees it. The duplication is the danger, not the disk space.
+git sees it.
 
 So the question this repo answers is not "how do I isolate agents" but **"how do several
 agents share one tree without me losing the ability to say which one did what"**.
@@ -23,7 +23,7 @@ whose lanes are worktrees; this is the opposite design.
 | [`LANES.md`](LANES.md) | The contract. Four rules, one command, the refusals, and the incident under each rule. Read this first. |
 | [`lanes.py`](lanes.py) | The register, with `claim`, `status`, `request`, `grant`, `decline`, `end`, `prune`, `armed` and `--selftest`. Standard library only. |
 | [`hooks/git_scope_guard.py`](hooks/git_scope_guard.py) | PreToolUse hook on Bash. Denies `git add -A`, `add .`, `add -u`, `commit -a`, `commit --amend` and any commit with no `--` pathspec, only while two or more lanes are live. Fails open on an internal error, loudly. |
-| [`hooks/spine_guard.py`](hooks/spine_guard.py) | PreToolUse hook on file edits. Asks before a write to a shared file listed in `.lanes-spine`, only while two or more lanes are live. Fails open on an internal error, loudly. |
+| [`hooks/spine_guard.py`](hooks/spine_guard.py) | PreToolUse hook on file edits. Asks before a write to a shared file listed in `.lanes-spine`, only while two or more lanes are live. Fails open on an internal error, loudly. (Both guards fail open here; the author's own private guards fail closed. Either is valid, see `LANES.md`, "The parts".) |
 | [`hooks/settings.example.json`](hooks/settings.example.json) | The hook wiring for Claude Code. |
 | [`.lanes-spine`](.lanes-spine) | The shared-file list, the only place it lives. |
 | [`LANE-RECORD.md`](LANE-RECORD.md) | The schema of the dated file each lane writes instead of the shared ones. |

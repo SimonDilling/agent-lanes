@@ -400,7 +400,10 @@ let the parent do every write, which removes the second writer instead of polici
 **Both guards fail OPEN on an internal error, loudly on stderr.** A broken guard must not brick
 the session, so a guard that cannot read the register or parse its input allows the call and
 says why. The cost is that a guard which is quietly broken protects nothing, and the self-test
-is the only thing that stops that staying hidden; run it after any edit to the hooks.
+is the only thing that stops that staying hidden; run it after any edit to the hooks. The
+author runs his own private guards the other way, fail closed, because in that setup a silent
+pass is the costlier error: a crashing guard there blocks the write and names the error. Either
+is a valid choice; pick by which error costs you more, and write the choice down.
 
 **All three self-tests are falsifiable and that is the point.** Each carries fixtures that
 contradict each other. A guard that blocked everything fails the must-pass cases, one that
