@@ -1,0 +1,10 @@
+# .lanes-spine: the SHARED files every session would otherwise write at once.
+# While two or more lanes are live, a write to any of these ASKS instead of proceeding.
+# One pattern per line, gitignore-style. This file is the only place the list lives.
+#
+# Replace these examples with your own. Typical members: the daily note, the agenda,
+# a shared task list, an append-only observation log, a run ledger.
+AGENDA.md
+TASKS.md
+daily/
+logs/observations.md

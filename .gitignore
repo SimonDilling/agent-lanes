@@ -1,0 +1,4 @@
+# The register is runtime state (which sessions are awake on THIS machine right now),
+# not repository knowledge. Never commit it.
+.lanes/
+__pycache__/
