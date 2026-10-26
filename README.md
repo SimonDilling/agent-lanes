@@ -16,6 +16,12 @@ If your folder can be duplicated safely, use worktrees. Every harness ships them
 the simpler design. This is for the case where you cannot, or will not. Not related to lanes.sh,
 whose lanes are worktrees; this is the opposite design.
 
+Nearest neighbours on one shared tree, as read on 25 October 2026: crewmates (a roster and
+per-path claims that warn before an edit lands), claude-presence (an MCP server with advisory
+resource locks) and git-commit-lock (a mutex so agents commit one at a time). None of them
+denies the bare commit. A commit mutex and this contract compose: the mutex decides when a
+commit runs, the pathspec rule decides what it takes.
+
 ## What is in it
 
 | File | What it is |
@@ -105,6 +111,11 @@ armed, and nothing can force the guards off.
 
 ## What it does not solve
 
+The guards are a nudge against careless commands, not a boundary against an actor trying to
+get past them. `git_scope_guard.py` reads command text, so anything that hides the literal
+word `git` escapes it: `G=git; $G commit`, a shell alias, a git alias, a wrapper script. It
+catches the mistake a well-meaning session makes, which is the one that cost something here.
+
 The register knows what was declared, not what is alive; a dead session reads live until the
 roll. And inside one session, sub-agents share one permission surface, so "which agent wrote
 this" has no enforceable answer there. The fix for that is to make sub-agents non-writing and
@@ -112,8 +123,8 @@ let the parent do every write.
 
 ## Provenance
 
-Extracted from a private setup that has run this contract since 2 August 2026. In the 85 days
-to 25 October 2026, lanes left a dated record on 67 days, and on 52 of those days two or more
+Extracted from a private setup that has run this contract since 2 August 2026. In the 86 days
+to 26 October 2026, lanes left a dated record on 68 days, and on 53 of those days two or more
 lanes did. Every incident in `LANES.md` happened; dates are kept, names and paths are not. The code here is a
 clean, minimal reimplementation of the mechanism, not a copy of the original files, which are
 tied to that setup's folder layout and clock.

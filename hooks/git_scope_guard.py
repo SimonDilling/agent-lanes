@@ -23,6 +23,15 @@ guard did; documentation of a rule is not enforcement of it.
 QUOTED REGIONS AND HEREDOC BODIES ARE STRIPPED FIRST. A commit message legitimately
 says "never use git add -A". Prose about a command is not the command.
 
+A NEWLINE ENDS A STATEMENT. The command is split on ; & | and newline, and every rule
+is checked per statement, so a `--` on one line is never another line's pathspec.
+
+WHAT IT IS NOT. This is a nudge against careless commands, not a boundary against an
+actor who is trying to get past it. It reads command text with regexes, so anything
+that hides the literal word `git` escapes it: `G=git; $G commit`, a shell alias, a
+git alias (`git ci`), a wrapper script. A guard over text cannot see through
+indirection, and this one does not try.
+
 POLARITY. This guard fails OPEN on an internal error (a broken guard must not brick
 the session), and the self-test is what stops it failing open silently forever. The
 fixtures contradict each other: a guard that blocked everything fails the must-pass
@@ -62,22 +71,35 @@ def strip_data_regions(cmd):
     return s
 
 
+_CONTINUATION = re.compile(r"[\\`][ \t]*\r?\n")
+
+
+def statements(s):
+    """Split a command into statements on ; & | AND newline.
+
+    A newline ends a statement in every shell. Splitting only on ;&| let a `--` on a
+    later line stand in as a bare commit's pathspec: `git commit -m x` NEWLINE
+    `git diff -- src/` was allowed (security audit, 25 Oct 2026). A trailing backslash
+    or PowerShell backtick continues the line, so those are joined first.
+    """
+    return [seg for seg in re.split(r"[;&|\r\n]+", _CONTINUATION.sub(" ", s)) if seg.strip()]
+
+
 def violation(cmd):
     """Return a short reason if the command breaks the lane git rules, else None."""
     s = strip_data_regions(cmd)
     if not re.search(r"(?i)\bgit\b", s):
         return None
-    if _ADD_ALL.search(s):
-        return "stages everything (add -A / --all / -u / . / :/)"
-    if _AMEND.search(s):
-        return "commit --amend rewrites HEAD, which may be another lane's commit"
-    if _COMMIT_ALL.search(s):
-        return "commit -a / --all stages everything"
-    # a commit with no `--` pathspec takes the whole index
-    for segment in re.split(r"[;&|]+", s):
-        if _COMMIT.search("git " + segment if "git" not in segment.lower() else segment):
-            if _COMMIT.search(segment) and not _COMMIT_PATHSPEC.search(segment):
-                return "commit carries no `--` pathspec, so it commits the WHOLE index"
+    for segment in statements(s):
+        if _ADD_ALL.search(segment):
+            return "stages everything (add -A / --all / -u / . / :/)"
+        if _AMEND.search(segment):
+            return "commit --amend rewrites HEAD, which may be another lane's commit"
+        if _COMMIT_ALL.search(segment):
+            return "commit -a / --all stages everything"
+        # a commit with no `--` pathspec takes the whole index
+        if _COMMIT.search(segment) and not _COMMIT_PATHSPEC.search(segment):
+            return "commit carries no `--` pathspec, so it commits the WHOLE index"
     return None
 
 
@@ -143,6 +165,11 @@ def selftest():
     must_block("git commit -m x")
     must_block("git add -- docs/ ; git commit --amend -m x -- docs/")
     must_block("git commit -F - -- src/ <<'EOF'\nmsg\nEOF\n && git add -A")
+    # security audit 25 Oct 2026: a later line's `--` must not count as the pathspec
+    must_block("git commit -m x\ngit diff -- src/")
+    must_block("git commit -m x\r\ngit diff -- src/")
+    must_block("git add -- src/\ngit commit -m x\necho -- done")
+    must_block("git status\ngit add -A")
 
     must_pass("git add -- src/ && git commit -m 'never use git add -A' -- src/")
     must_pass("git commit -m \"git commit -a is banned\" -- docs/")
@@ -152,6 +179,10 @@ def selftest():
     must_pass("git push origin master")
     must_pass("git commit -F - -- src/ <<'EOF'\nsubject\n\ngit add -A in the body is prose\nEOF")
     must_pass("echo 'git add -A' > /dev/null")
+    must_pass("git add -- src/\ngit commit -m x -- src/")
+    must_pass("git commit -m x \\\n  -- src/")          # bash line continuation
+    must_pass("git commit -m x `\n  -- src/")           # PowerShell line continuation
+    must_pass("git commit -m x -- src/\nls -a")         # -a on another line is not commit -a
     must_pass("git add -A", live=live1)          # inert below two lanes
     must_pass("git commit -m x", live=[])        # inert with no lanes
 

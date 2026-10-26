@@ -378,6 +378,13 @@ the session address into the register at claim time is what lets you check the o
 other, and a lane that will not answer and has not written its record in hours may simply be
 gone.
 
+**An actor trying to get past the guards.** The guards are a nudge against careless commands,
+not a boundary. The git guard reads command text, statement by statement (split on `;`, `&`,
+`|` and newline), so anything that hides the literal word `git` escapes it: `G=git; $G commit`,
+a shell alias, a git alias, a wrapper script. That is the inherent limit of a guard over text,
+and this one does not try to see through indirection. It catches the mistake a well-meaning
+session makes, which is the mistake every incident in this file was.
+
 **Sub-agents inside one session.** An orchestrator with several sub-agents inherits one
 permission surface and one git identity, so "which agent made this write" has no enforceable
 answer at all. The answer there is not a smaller partition. Make the sub-agents non-writing and
